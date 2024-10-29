@@ -2,6 +2,10 @@ import os
 import re
 from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
+from dotenv import load_dotenv
+from create_event import create_google_calendar_event
+
+load_dotenv()
 
 app = App(token=os.environ.get("SLACK_BOT_TOKEN"))
 
@@ -152,6 +156,9 @@ def handle_event_creation_submission(ack, body, client, view, logger):
     logger.info(f"Attempting to send message to channel: {channel_id}")
 
     try:
+        # Call the create_event function from the Google Calendar code
+        create_google_calendar_event(event_name, event_date, event_location, event_description, event_start_time, event_end_time)
+
         result = client.chat_postMessage(
             channel=channel_id,
             text=f"A new event '{event_name}' has been created by <@{body['user']['id']}>!\n"

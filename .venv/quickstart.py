@@ -1,35 +1,26 @@
-import os
-from google_auth_oauthlib.flow import Flow
+from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
-import json
+import os
 
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 
 
 def get_credentials():
     creds = None
-    if os.environ.get('GOOGLE_OAUTH_TOKEN'):
-        creds = Credentials.from_authorized_user_info(json.loads(os.environ['GOOGLE_OAUTH_TOKEN']), SCOPES)
+    if os.path.exists('token.json'):
+        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
 
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = Flow.from_client_config(
-                json.loads(os.environ['GOOGLE_OAUTH_CLIENT_CONFIG']),
-                SCOPES,
-                redirect_uri='urn:ietf:wg:oauth:2.0:oob')
+            flow = InstalledAppFlow.from_client_secrets_file(
+                'client_secret.json', SCOPES)
+            creds = flow.run_local_server(port=0)
 
-            auth_url, _ = flow.authorization_url(prompt='consent')
-
-            print(f'Please go to this URL and authorize the application: {auth_url}')
-            code = input('Enter the authorization code: ')
-
-            flow.fetch_token(code=code)
-            creds = flow.credentials
-
-        os.environ['GOOGLE_OAUTH_TOKEN'] = creds.to_json()
+        with open('token.json', 'w') as token:
+            token.write(creds.to_json())
 
     return creds
 
